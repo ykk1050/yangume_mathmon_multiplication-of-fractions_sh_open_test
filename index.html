@@ -2,7 +2,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>수학몬 마스터1.081- Monster RPG</title>
+  <title>수학몬 마스터1.082- Monster RPG</title>
   <style>
         body {
             box-sizing: border-box;
@@ -1119,7 +1119,7 @@
   <div class="app-container">
     <div class="header">
       <button class="reset-button" onclick="confirmResetGame()">🔄 초기화</button>
-      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.081</h1>
+      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.082</h1>
       <div class="title-info">
         <div class="current-title" id="currentTitle">⭐ 초보자</div>
         <div class="title-list" id="titleList">
@@ -1169,6 +1169,8 @@
             </div>
             <button class="btn btn-primary" onclick="checkAnswer()" id="submitBtn" disabled>확인</button>
           </div>
+
+
           <p class="instruction-text">※ 답은 기약분수 형태로 입력해주세요</p>
           <div id="feedback" class="feedback" style="display: none;"></div>
           <button class="btn btn-success" id="startBtn" onclick="generateProblem()">시작</button>
@@ -1221,6 +1223,27 @@
               <p class="instruction-text">※ 답은 기약분수 형태로 입력해주세요</p>
               <div id="captureQuizFeedback" class="feedback" style="display: none;"></div>
             </div>
+
+            <!-- 🔴 여기에 추가하세요! problem-area div가 끝난 직후 -->
+            <div id="answerPreview" style="
+                display: none;
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #48bb78, #38a169);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 15px;
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+                z-index: 100;
+                font-weight: bold;
+                font-size: 1.1rem;
+                max-width: 250px;
+            ">
+                <div style="margin-bottom: 8px; font-size: 0.9rem; opacity: 0.9;">🔑 정답 미리보기</div>
+                <div id="answerText" style="font-size: 1.3rem;"></div>
+            </div>
+            <!-- 정답 미리보기 div 추가 끝 -->                
             <button class="btn btn-danger" onclick="resetCapture()">포기하고 돌아가기</button>
           </div>
         </div>
@@ -1346,6 +1369,10 @@
               <button class="btn btn-success" onclick="addCoins(1000)">코인 +1000</button>
               <button class="btn btn-success" onclick="addRandomMonster()">랜덤 환상 동물 추가</button>
               <button class="btn btn-success" onclick="unlockAllMonsters()">모든 환상 동물 획득</button>
+              <!-- 🔴 여기에 추가하세요! -->
+              <button class="btn btn-warning" onclick="toggleShowAnswer()">
+                  👁️ 정답 미리보기 <span id="showAnswerStatus">OFF</span>
+              </button>
             </div>
             <p style="margin-top: 15px; color: #718096; font-size: 0.9rem;">
               ℹ️ 게임 데이터 초기화는 메인 화면 왼쪽 위의 '🔄 초기화' 버튼을 사용하세요.
@@ -1368,6 +1395,9 @@
               <div class="admin-status-item">
                 <strong>구매 스킬:</strong> <span id="adminSkillCount">0</span>
               </div>
+              <button class="btn btn-warning" onclick="toggleShowAnswer()">
+    👁️ 정답 미리보기 <span id="showAnswerStatus">OFF</span>
+</button>
             </div>
           </div>
         </div>
@@ -1465,7 +1495,9 @@
       currentMonster: null,
       isAdminLoggedIn: false,
       infiniteCoinsEnabled: false,
-      captureTrainingLevel: 0
+      captureTrainingLevel: 0,
+      showAnswerEnabled: false  // 🔴 이 줄을 추가하세요!
+
     };
 
     // Game Constants (NEW BALANCE)
@@ -1919,6 +1951,9 @@
       // -----------------------------------------------------------------    
       gameState.currentProblem = problem;
       gameState.currentAnswer = problem.answer;
+      if (gameState.showAnswerEnabled) {
+        updateAnswerPreview();
+    }
       document.getElementById('problem').innerHTML = problem.problemHtml;
       document.getElementById('wholeInput').disabled = false;
       document.getElementById('numeratorInput').disabled = false;
@@ -2873,6 +2908,8 @@
       // Save admin settings
       const keepAdminLogin = gameState.isAdminLoggedIn;
       const keepInfiniteCoins = gameState.infiniteCoinsEnabled;
+      const keepShowAnswer = gameState.showAnswerEnabled;  // 🆕 추가
+
       console.log('관리자 설정 저장:', { keepAdminLogin, keepInfiniteCoins });
       
       // Reset all game state
@@ -2899,6 +2936,8 @@
       // Restore admin settings
       gameState.isAdminLoggedIn = keepAdminLogin;
       gameState.infiniteCoinsEnabled = keepInfiniteCoins;
+      gameState.showAnswerEnabled = keepShowAnswer;  // 🆕 추가
+
       console.log('게임 상태 초기화 완료');
       
       // Save data
@@ -3029,6 +3068,61 @@
     // Initialize
     loadData();
     updateAllUI();
+
+    function toggleShowAnswer() {
+        gameState.showAnswerEnabled = !gameState.showAnswerEnabled;
+        document.getElementById('showAnswerStatus').textContent = 
+            gameState.showAnswerEnabled ? 'ON' : 'OFF';
+        
+        if (gameState.showAnswerEnabled) {
+            showNotification('👁️ 정답 미리보기가 활성화되었습니다!');
+            if (gameState.currentAnswer) {
+                updateAnswerPreview();
+            }
+        } else {
+            showNotification('👁️ 정답 미리보기가 비활성화되었습니다!');
+            hideAnswerPreview();
+        }
+        saveData();
+    }
+
+    // 정답 표시 업데이트
+    function updateAnswerPreview() {
+        if (!gameState.showAnswerEnabled || !gameState.currentAnswer) {
+            hideAnswerPreview();
+            return;
+        }
+        
+        const answerPreview = document.getElementById('answerPreview');
+        const answerText = document.getElementById('answerText');
+        
+        const answer = gameState.currentAnswer;
+        const mixed = improperToMixed(answer.numerator, answer.denominator);
+        
+        let displayText = '';
+        if (mixed.whole > 0) {
+            if (mixed.numerator === 0) {
+                displayText = `${mixed.whole}`;
+            } else {
+                displayText = `${mixed.whole} ${mixed.numerator}/${mixed.denominator}`;
+            }
+        } else {
+            displayText = `0 ${mixed.numerator}/${mixed.denominator}`;
+        }
+        
+        answerText.textContent = displayText;
+        answerPreview.style.display = 'block';
+    }
+
+    // 정답 숨기기
+    function hideAnswerPreview() {
+        const answerPreview = document.getElementById('answerPreview');
+        if (answerPreview) {
+            answerPreview.style.display = 'none';
+        }
+    }
+
+
   </script>
 </body>
 </html>
