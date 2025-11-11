@@ -2,7 +2,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>수학몬 마스터1.08- Monster RPG</title>
+  <title>수학몬 마스터1.081- Monster RPG</title>
   <style>
         body {
             box-sizing: border-box;
@@ -1119,7 +1119,7 @@
   <div class="app-container">
     <div class="header">
       <button class="reset-button" onclick="confirmResetGame()">🔄 초기화</button>
-      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.08</h1>
+      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.081</h1>
       <div class="title-info">
         <div class="current-title" id="currentTitle">⭐ 초보자</div>
         <div class="title-list" id="titleList">
@@ -1727,30 +1727,33 @@
     }
 
     function reduceFraction(numerator, denominator) {
-      // 0으로 나누는 경우 방지
-      if (denominator === 0) return { numerator: numerator, denominator: 0 };
-      
-      // 최대공약수 (GCD)를 구함
-      const g = gcd(Math.abs(numerator), Math.abs(denominator));
-      
-      // 🚨 [수정]: 나눗셈 결과를 반드시 정수로 반올림하여 부동 소수점 오류를 방지합니다.
-      return { 
-          numerator: Math.round(numerator / g), 
-          denominator: Math.round(denominator / g) 
-      };
-  }
-
+        // 0으로 나누는 경우 방지
+        if (denominator === 0) return { numerator: numerator, denominator: 0 };
+        
+        // 정수로 변환 (부동소수점 오류 방지)
+        numerator = Math.round(numerator);
+        denominator = Math.round(denominator);
+        
+        // 최대공약수 (GCD)를 구함
+        const g = gcd(Math.abs(numerator), Math.abs(denominator));
+        
+        // 분수 약분
+        return { 
+            numerator: Math.round(numerator / g), 
+            denominator: Math.round(denominator / g) 
+        };
+    }
   function mixedToImproper(whole, numerator, denominator) {
-      if (denominator === 0) return { numerator: 0, denominator: 0 };
-      
-      // 입력 값에 미세한 소수점 오차가 있을 수 있으므로 정수로 처리합니다.
-      const w = Math.round(whole);
-      const n = Math.round(numerator);
-      const d = Math.round(denominator);
+    if (denominator === 0) return { numerator: 0, denominator: 0 };
+    
+    // 입력 값을 정수로 처리 (부동소수점 오류 방지)
+    const w = Math.round(whole);
+    const n = Math.round(numerator);
+    const d = Math.round(denominator);
 
-      const num = w * d + n;
-      return { numerator: num, denominator: d };
-  }
+    const num = w * d + n;
+    return { numerator: num, denominator: d };
+}
 
   function improperToMixed(numerator, denominator) {
       if (denominator === 0) return { whole: 0, numerator: 0, denominator: 0 };
@@ -2007,8 +2010,16 @@
           console.log("분모 일치 여부:", userReduced.denominator === gameState.currentAnswer.denominator);
           console.log("------------------------");
         
-        const isCorrect = userReduced.numerator === gameState.currentAnswer.numerator && userReduced.denominator === gameState.currentAnswer.denominator;
-        
+          // 🔧 버그 수정: 정답도 정수로 변환하여 비교
+        const correctAnswer = {
+            numerator: Math.round(gameState.currentAnswer.numerator),
+            denominator: Math.round(gameState.currentAnswer.denominator)
+        };
+
+        // 🔧 버그 수정: 정수로 변환한 정답과 비교
+        const isCorrect = userReduced.numerator === correctAnswer.numerator && 
+                        userReduced.denominator === correctAnswer.denominator;
+
         // 이 이후의 isCorrect 로직은 형식과 수학적 값이 모두 맞았을 때만 실행됩니다.
         if (isCorrect) {
             gameState.correctAnswers++;
