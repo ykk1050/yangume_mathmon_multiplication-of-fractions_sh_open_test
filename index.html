@@ -2,7 +2,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>수학몬 마스터1.082- Monster RPG</title>
+  <title>수학몬 마스터1.083- Monster RPG</title>
   <style>
         body {
             box-sizing: border-box;
@@ -1119,7 +1119,7 @@
   <div class="app-container">
     <div class="header">
       <button class="reset-button" onclick="confirmResetGame()">🔄 초기화</button>
-      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.082</h1>
+      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.083</h1>
       <div class="title-info">
         <div class="current-title" id="currentTitle">⭐ 초보자</div>
         <div class="title-list" id="titleList">
@@ -1733,6 +1733,12 @@
     function reduceFraction(numerator, denominator) {
       // 0으로 나누는 경우 방지
       if (denominator === 0) return { numerator: numerator, denominator: 0 };
+
+      // 🔧 음수 처리: 분모는 항상 양수로
+      if (denominator < 0) {
+          numerator = -numerator;
+          denominator = -denominator;
+      }
       
       // 최대공약수 (GCD)를 구함
       const g = gcd(Math.abs(numerator), Math.abs(denominator));
@@ -1741,15 +1747,17 @@
       return { 
           numerator: Math.round(numerator / g), 
           denominator: Math.round(denominator / g) 
+
+          
       };
   }
 
   function mixedToImproper(whole, numerator, denominator) {
       if (denominator === 0) return { numerator: 0, denominator: 0 };
       
-      // 입력 값에 미세한 소수점 오차가 있을 수 있으므로 정수로 처리합니다.
-      const w = Math.round(whole);
-      const n = Math.round(numerator);
+      /// 🔧 null/undefined 처리
+      const w = Math.round(whole || 0);
+      const n = Math.round(numerator || 0);
       const d = Math.round(denominator);
 
       const num = w * d + n;
@@ -1823,7 +1831,13 @@
               whole: Math.floor(Math.random() * 3) + 1, 
               numerator: Math.floor(Math.random() * 4) + 1, 
               denominator: Math.floor(Math.random() * 4) + 2 
-            };
+          };
+
+          // 🔧 분수 부분을 기약분수로 만들기
+          const reduced = reduceFraction(mixed1.numerator, mixed1.denominator);
+          mixed1.numerator = reduced.numerator;
+          mixed1.denominator = reduced.denominator;
+
           } while (mixed1.numerator >= mixed1.denominator);
           
           do {
