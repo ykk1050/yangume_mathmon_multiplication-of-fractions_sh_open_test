@@ -2,7 +2,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>수학몬 마스터1.081- Monster RPG</title>
+  <title>수학몬 마스터1.082- Monster RPG</title>
   <style>
         body {
             box-sizing: border-box;
@@ -1119,7 +1119,7 @@
   <div class="app-container">
     <div class="header">
       <button class="reset-button" onclick="confirmResetGame()">🔄 초기화</button>
-      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.081</h1>
+      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.082</h1>
       <div class="title-info">
         <div class="current-title" id="currentTitle">⭐ 초보자</div>
         <div class="title-list" id="titleList">
@@ -1336,6 +1336,9 @@
               <button class="btn btn-cheat-inactive" onclick="toggleInfiniteCoins()">
                 <span id="coinCheatStatus">무한 코인: OFF</span>
               </button>
+              <button class="btn btn-cheat-inactive" onclick="toggleShowAnswers()">
+                <span id="answerCheatStatus">정답 미리보기: OFF</span>
+              </button>
             </div>
           </div>
 
@@ -1465,6 +1468,7 @@
       currentMonster: null,
       isAdminLoggedIn: false,
       infiniteCoinsEnabled: false,
+      showAnswers: false,
       captureTrainingLevel: 0
     };
 
@@ -2759,6 +2763,24 @@
       }
       
       updateAdminStatus();
+    }
+
+    function toggleShowAnswers() {
+        gameState.showAnswers = !gameState.showAnswers;
+        // 새로운 ID인 'answerCheatStatus'를 사용하여 상태 표시 요소를 찾습니다.
+        const statusElement = document.getElementById('answerCheatStatus'); 
+        const button = statusElement.parentElement;
+        
+        if (gameState.showAnswers) {
+          statusElement.textContent = '정답 미리보기: ON';
+          button.className = 'btn btn-cheat-active';
+        } else {
+          statusElement.textContent = '정답 미리보기: OFF';
+          button.className = 'btn btn-cheat-inactive';
+        }
+        
+        // 무한 코인 기능과 동일하게 관리자 상태를 업데이트합니다.
+        updateAdminStatus(); 
     }
 
     function addCoins(amount) {
