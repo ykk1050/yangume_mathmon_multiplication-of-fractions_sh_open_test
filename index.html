@@ -2,7 +2,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>수학몬 마스터1.08- Monster RPG</title>
+  <title>수학몬 마스터1.081- Monster RPG</title>
   <style>
         body {
             box-sizing: border-box;
@@ -1119,7 +1119,7 @@
   <div class="app-container">
     <div class="header">
       <button class="reset-button" onclick="confirmResetGame()">🔄 초기화</button>
-      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.08</h1>
+      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.081</h1>
       <div class="title-info">
         <div class="current-title" id="currentTitle">⭐ 초보자</div>
         <div class="title-list" id="titleList">
@@ -1925,7 +1925,27 @@
       document.getElementById('numeratorInput').value = '';
       document.getElementById('denominatorInput').value = '';
       document.getElementById('wholeInput').focus();
-      document.getElementById('feedback').style.display = 'none';
+      // --- [수정] 관리자 모드 정답 미리보기 로직 ---
+      const feedbackEl = document.getElementById('feedback');
+      if (gameState.showAnswers) {
+          // 관리자 모드가 켜져있으면 정답을 계산하여 표시합니다.
+          const answer = gameState.currentAnswer;
+          const mixed = improperToMixed(answer.numerator, answer.denominator);
+          
+          let answerString = "";
+          if (mixed.whole > 0) answerString += `${mixed.whole} `;
+          if (mixed.numerator > 0) answerString += `${mixed.numerator}/${mixed.denominator}`;
+          if (answerString === "") answerString = "0"; // 0일 경우
+
+          feedbackEl.textContent = `[ADMIN] 정답: ${answerString} (가분수: ${answer.numerator}/${answer.denominator})`;
+          feedbackEl.className = 'feedback admin-info'; // (CSS 스타일링을 위한 클래스)
+          feedbackEl.style.display = 'block';
+      } else {
+          // 관리자 모드가 꺼져있으면 피드백을 숨깁니다 (기존 로직).
+          feedbackEl.style.display = 'none';
+      }
+
+      //document.getElementById('feedback').style.display = 'none';
     }
 
     function checkAnswer() {
@@ -2316,7 +2336,26 @@
       document.getElementById('captureWholeInput').value = '';
       document.getElementById('captureNumeratorInput').value = '';
       document.getElementById('captureDenominatorInput').value = '';
-      document.getElementById('captureQuizFeedback').style.display = 'none';
+      // --- [수정] 관리자 모드 정답 미리보기 로직 ---
+      const feedbackEl = document.getElementById('captureQuizFeedback');
+      if (gameState.showAnswers) {
+          // 관리자 모드가 켜져있으면 정답을 계산하여 표시합니다.
+          const answer = gameState.currentAnswer;
+          const mixed = improperToMixed(answer.numerator, answer.denominator);
+          
+          let answerString = "";
+          if (mixed.whole > 0) answerString += `${mixed.whole} `;
+          if (mixed.numerator > 0) answerString += `${mixed.numerator}/${mixed.denominator}`;
+          if (answerString === "") answerString = "0"; // 0일 경우
+
+          feedbackEl.textContent = `[ADMIN] 정답: ${answerString} (가분수: ${answer.numerator}/${answer.denominator})`;
+          feedbackEl.className = 'feedback admin-info';
+          feedbackEl.style.display = 'block';
+      } else {
+          // 관리자 모드가 꺼져있으면 피드백을 숨깁니다 (기존 로직).
+          feedbackEl.style.display = 'none';
+      }
+      //document.getElementById('captureQuizFeedback').style.display = 'none';
     }
 
       function submitCaptureAnswer() {
