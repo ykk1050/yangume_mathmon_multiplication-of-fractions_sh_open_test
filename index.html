@@ -2,7 +2,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>수학몬 마스터1.083- Monster RPG</title>
+  <title>수학몬 마스터1.084- Monster RPG</title>
   <style>
         body {
             box-sizing: border-box;
@@ -1119,7 +1119,7 @@
   <div class="app-container">
     <div class="header">
       <button class="reset-button" onclick="confirmResetGame()">🔄 초기화</button>
-      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.083</h1>
+      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.084</h1>
       <div class="title-info">
         <div class="current-title" id="currentTitle">⭐ 초보자</div>
         <div class="title-list" id="titleList">
@@ -1727,38 +1727,66 @@
 
     // Fraction Math Functions
     function gcd(a, b) {
-      return b === 0 ? a : gcd(b, a % b);
-    }
+        // [수정] 입력값이 소수점일 경우를 대비해 반올림(round)하여 정수화
+        a = Math.round(Math.abs(a));
+        b = Math.round(Math.abs(b));
+        return b === 0 ? a : gcd(b, a % b);
+    }
+    //function gcd(a, b) {
+    //  return b === 0 ? a : gcd(b, a % b);
+    //}
 
     function reduceFraction(numerator, denominator) {
-      // 0으로 나누는 경우 방지
-      if (denominator === 0) return { numerator: numerator, denominator: 0 };
+        // [수정] 0으로 나누는 경우 방지
+        if (denominator === 0) return { numerator: numerator, denominator: 0 };
+        
+        const g = gcd(numerator, denominator);
+        
+        // 🚨 [핵심 수정] 나눗셈 결과를 Math.round()로 감싸 강제로 "정수"로 만듭니다.
+        let num = Math.round(numerator / g);
+        let den = Math.round(denominator / g);
+        
+        // [수정] 분모가 음수일 경우 부호를 분자로 넘깁니다.
+        if (den < 0) {
+            num = -num;
+            den = -den;
+        }
+        
+        return { 
+            numerator: num, 
+            denominator: den 
+        };
+    }
 
-      // 🔧 음수 처리: 분모는 항상 양수로
-      if (denominator < 0) {
-          numerator = -numerator;
-          denominator = -denominator;
-      }
+  //   function reduceFraction(numerator, denominator) {
+  //     // 0으로 나누는 경우 방지
+  //     if (denominator === 0) return { numerator: numerator, denominator: 0 };
+
+  //     // 🔧 음수 처리: 분모는 항상 양수로
+  //     if (denominator < 0) {
+  //         numerator = -numerator;
+  //         denominator = -denominator;
+  //     }
       
-      // 최대공약수 (GCD)를 구함
-      const g = gcd(Math.abs(numerator), Math.abs(denominator));
+  //     // 최대공약수 (GCD)를 구함
+  //     const g = gcd(Math.abs(numerator), Math.abs(denominator));
       
-      // 🚨 [수정]: 나눗셈 결과를 반드시 정수로 반올림하여 부동 소수점 오류를 방지합니다.
-      return { 
-          numerator: Math.round(numerator / g), 
-          denominator: Math.round(denominator / g) 
+  //     // 🚨 [수정]: 나눗셈 결과를 반드시 정수로 반올림하여 부동 소수점 오류를 방지합니다.
+  //     return { 
+  //         numerator: Math.round(numerator / g), 
+  //         denominator: Math.round(denominator / g) 
 
           
-      };
-  }
+  //     };
+  // }
 
   function mixedToImproper(whole, numerator, denominator) {
       if (denominator === 0) return { numerator: 0, denominator: 0 };
       
-      /// 🔧 null/undefined 처리
-      const w = Math.round(whole || 0);
-      const n = Math.round(numerator || 0);
-      const d = Math.round(denominator);
+      // [수정] 모든 입력을 정수화하여 계산
+      const w = Math.round(whole);
+      const n = Math.round(numerator);
+      const d = Math.round(denominator);
 
       const num = w * d + n;
       return { numerator: num, denominator: d };
@@ -1767,22 +1795,39 @@
   function improperToMixed(numerator, denominator) {
       if (denominator === 0) return { whole: 0, numerator: 0, denominator: 0 };
       
-      // 입력 값에 미세한 소수점 오차가 있을 수 있으므로 정수로 처리합니다.
-      const num = Math.round(numerator);
-      const den = Math.round(denominator);
+      // [수정] 모든 입력을 정수화하여 계산
+      const num = Math.round(numerator);
+      const den = Math.round(denominator);
 
-      const whole = Math.floor(num / den);
-      const newNumerator = num % den;
-      
+      const whole = Math.floor(num / den);
+      const newNumerator = num % den;
+
+
+      // // 입력 값에 미세한 소수점 오차가 있을 수 있으므로 정수로 처리합니다.
+      // const num = Math.round(numerator);
+      // const den = Math.round(denominator);
+
+      // const whole = Math.floor(num / den);
+      // const newNumerator = num % den;
+      // [수정] 나머지 분수 부분은 reduceFraction을 통해 (정수화된) 기약분수로 만듭니다.
+      const reducedRemainder = reduceFraction(newNumerator, den);
+        
+      return { 
+          whole: whole, 
+          numerator: reducedRemainder.numerator, 
+          denominator: reducedRemainder.denominator 
+      };
+  }
+    // End Fraction Math Functions
       // 나머지 분수 부분은 reduceFraction을 통해 기약분수로 만듭니다.
-      const reducedRemainder = reduceFraction(newNumerator, den);
+  //     const reducedRemainder = reduceFraction(newNumerator, den);
       
-      return { 
-          whole: whole, 
-          numerator: reducedRemainder.numerator, 
-          denominator: reducedRemainder.denominator 
-      };
-  }
+  //     return { 
+  //         whole: whole, 
+  //         numerator: reducedRemainder.numerator, 
+  //         denominator: reducedRemainder.denominator 
+  //     };
+  // }
 
     function generateFractionProblem() {
       let problemHtml, answer, answerMixed;
