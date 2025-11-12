@@ -2,7 +2,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>수학몬 마스터1.083- Monster RPG</title>
+  <title>수학몬 마스터1.084- Monster RPG</title>
   <style>
         body {
             box-sizing: border-box;
@@ -1119,7 +1119,7 @@
   <div class="app-container">
     <div class="header">
       <button class="reset-button" onclick="confirmResetGame()">🔄 초기화</button>
-      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.083</h1>
+      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.084</h1>
       <div class="title-info">
         <div class="current-title" id="currentTitle">⭐ 초보자</div>
         <div class="title-list" id="titleList">
@@ -2011,6 +2011,11 @@
             //gameState.currentStreak = 0;
             updatePracticeStats(); // 통계 업데이트
             saveData();
+
+            // 🔴 추가: 정답 미리보기가 켜져있으면 계속 표시
+            if (gameState.showAnswerEnabled) {
+                updateAnswerPreview();
+            }
             
             return; // 함수 종료 (정답으로 카운트되는 것을 막음)
         }
@@ -2028,6 +2033,10 @@
                 //gameState.currentStreak = 0;
                 updatePracticeStats(); // 통계 업데이트
                 saveData();
+                // 🔴 추가: 정답 미리보기가 켜져있으면 계속 표시
+                if (gameState.showAnswerEnabled) {
+                    updateAnswerPreview();
+                }
 
                 return; // 함수 종료 (정답으로 카운트되는 것을 막음)
             }
@@ -2084,7 +2093,15 @@
             updatePracticeStats();
             checkAndUnlockTitles();
             saveData();
-            setTimeout(() => generateProblem(), 1500);
+
+            // 🔴 수정: 정답 후 새 문제로 넘어가기 전에 정답 표시 숨기기
+            setTimeout(() => {
+                hideAnswerPreview();  // 새 문제 생성 전에 정답 숨기기
+                generateProblem();
+            }, 1500);
+
+
+            //setTimeout(() => generateProblem(), 1500);
         } else {
             // 수학적으로는 틀린 답일 경우
             gameState.wrongAnswers++;
@@ -2097,6 +2114,12 @@
             document.getElementById('wholeInput').focus();
             updatePracticeStats();
             saveData();
+            // 🔴 추가: 오답 시에도 정답 미리보기가 켜져있으면 계속 표시
+            if (gameState.showAnswerEnabled) {
+                updateAnswerPreview();
+            }
+
+
             setTimeout(() => { feedback.style.display = 'none'; }, 2000);
         }
         feedback.style.display = 'block';
