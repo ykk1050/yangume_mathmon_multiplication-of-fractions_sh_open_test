@@ -2,7 +2,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>수학몬 마스터1.091- Monster RPG</title>
+  <title>수학몬 마스터1.092- Monster RPG</title>
   <style>
         body {
             box-sizing: border-box;
@@ -1119,7 +1119,7 @@
   <div class="app-container">
     <div class="header">
       <button class="reset-button" onclick="confirmResetGame()">🔄 초기화</button>
-      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.091</h1>
+      <h1 class="app-title">수학몬 마스터_분수의 곱셈1.092</h1>
       <div class="title-info">
         <div class="current-title" id="currentTitle">⭐ 초보자</div>
         <div class="title-list" id="titleList">
@@ -1139,7 +1139,9 @@
       <button class="tab" onclick="switchTab('shop')">상점 및 훈련</button>
       <button class="tab" onclick="switchTab('minigame')">수학몬 포획하러 가기</button>
       <button class="tab" onclick="switchTab('collection')">도감</button>
+      <button onclick="showRanking()">🏆 랭킹</button>
       <button class="tab admin-tab" onclick="showAdminLogin()">🔧 관리 콘솔</button>
+
     </div>
 
     <div class="content">
@@ -1394,6 +1396,123 @@
     </div>
   </div>
 
+  <div id="rankingPage" class="page" style="display:none;">
+      <div class="page-header">
+        <h2>🏆 명예의 전당 (Top 100)</h2>
+        <button class="btn btn-back" onclick="showHome()">🏠 홈으로</button>
+      </div>
+      <div class="page-content">
+        <div id="usernameSection" class="admin-section">
+          <h4>내 닉네임: <span id="currentUsername">없음</span></h4>
+          <button class="btn" onclick="setUsername()">닉네임 설정/변경</button>
+          <p class="small-text">닉네임이 설정되어야 랭킹이 저장됩니다.</p>
+        </div>
+        <div class="admin-section">
+          <h4>랭킹 기준</h4>
+          <div class="admin-buttons">
+            <button class="btn" onclick="loadRankingData('Collection_Rate')">도감 완성률</button>
+            <button class="btn" onclick="loadRankingData('Total_Monsters')">총 포획 수</button>
+            <button class="btn" onclick="loadRankingData('Rare_Monsters')">레어 포획 수</button>
+          </div>
+        </div>
+        <div id="rankingLoading" style="display:none; text-align:center; padding: 20px;">
+          <strong>데이터를 불러오는 중...</strong>
+        </div>
+        <div id="rankingList" class="collection-grid">
+                  </div>
+      </div>
+    </div>
+
+        <script>
+      // 랭킹 페이지 보여주기
+      function showRanking() {
+        showPage('rankingPage');
+        // 닉네임 표시 업데이트
+        const usernameEl = document.getElementById('currentUsername');
+        if (gameState.username) {
+          usernameEl.textContent = gameState.username;
+        } else {
+          usernameEl.textContent = '없음 (설정 필요)';
+        }
+        // 기본 랭킹(도감) 불러오기
+        loadRankingData('Collection_Rate');
+      }
+
+      // 닉네임 설정
+      function setUsername() {
+        const currentName = gameState.username || '';
+        const newName = prompt('랭킹에 표시될 닉네임을 입력하세요 (2~10자):', currentName);
+        if (newName && newName.length >= 2 && newName.length <= 10) {
+          gameState.username = newName;
+          document.getElementById('currentUsername').textContent = newName;
+          saveData(); // 닉네임 저장
+          showNotification('닉네임이 설정되었습니다.');
+          sendDataToRankingServer(); // 닉네임 설정 후 즉시 전송
+        } else if (newName) {
+          showNotification('닉네임은 2자 이상 10자 이하로 설정해야 합니다.');
+        }
+      }
+
+      // 랭킹 데이터 불러오기 (doGet)
+      function loadRankingData(type) {
+        const loadingEl = document.getElementById('rankingLoading');
+        const listEl = document.getElementById('rankingList');
+        
+        loadingEl.style.display = 'block';
+        listEl.innerHTML = ''; // 목록 비우기
+
+        fetch(RANKING_API_URL + '?type=' + type)
+          .then(response => response.json())
+          .then(data => {
+            loadingEl.style.display = 'none';
+            if (data && data.length > 0) {
+              let rank = 1;
+              data.forEach(entry => {
+                const item = document.createElement('div');
+                item.className = 'collection-item';
+                
+                let value;
+                let label;
+                switch(type) {
+                  case 'Collection_Rate':
+                    value = entry.Collection_Rate.toFixed(1) + '%';
+                    label = '도감';
+                    break;
+                  case 'Total_Monsters':
+                    value = entry.Total_Monsters + '마리';
+                    label = '총 포획';
+                    break;
+                  case 'Rare_Monsters':
+                    value = entry.Rare_Monsters + '마리';
+                    label = '레어';
+                    break;
+                }
+
+                item.innerHTML = `
+                  <div class="rank-badge">${rank++}</div>
+                  <div class="collection-name">${entry.username}</div>
+                  <div class="collection-rarity" style="color: #333;">${label}: <strong>${value}</strong></div>
+                `;
+                
+                // 자신의 랭킹 강조
+                if (gameState.username && entry.username === gameState.username) {
+                  item.classList.add('my-rank'); // (my-rank 클래스 스타일 추가 필요)
+                }
+                listEl.appendChild(item);
+              });
+            } else {
+              listEl.innerHTML = '<p style="text-align: center;">아직 랭킹 데이터가 없습니다.</p>';
+            }
+          })
+          .catch(err => {
+            loadingEl.style.display = 'none';
+            console.error('랭킹 로드 오류:', err);
+            listEl.innerHTML = '<p style="text-align: center;">랭킹을 불러오는 데 실패했습니다.</p>';
+          });
+      }
+    </script>
+            <div id="collectionPage" class="page" style="display:none;">
+
   <!-- Reset Confirmation Modal -->
   <div id="resetModal" class="reset-modal">
     <div class="reset-modal-content">
@@ -1469,7 +1588,10 @@
       isAdminLoggedIn: false,
       infiniteCoinsEnabled: false,
       showAnswers: false,
-      captureTrainingLevel: 0
+      captureTrainingLevel: 0,
+      // --- 👇👇👇 [1-1 수정] 이 줄을 추가합니다. 👇👇👇 ---
+      username: null
+      // ---------------------------------------------------
     };
 
     // Game Constants (NEW BALANCE)
@@ -1496,6 +1618,10 @@
         withFinder: { common: 50, rare: 29, epic: 16, legendary: 5 }
       }
     };
+
+    // --- 👇👇👇 [1-1 수정] 이 줄을 추가합니다. 👇👇👇 ---
+    const RANKING_API_URL = 'https://script.google.com/macros/s/AKfycbx_vDHBKtR8EvfNpe2azuyLZHIPN3fnfFv5pgJhqTWbug53ZdN8f9cGd-e5b_pyqcSC/exec';
+    // ---------------------------------------------------
 
     const titles = [
       { name: '초보자', emoji: '🌱', requirement: '게임 시작', check: () => true },
@@ -1571,13 +1697,62 @@
       { id: 'capture_training', name: '💪 포획 자세 연습', description: '포획률을 영구적으로 2% 높여줍니다. (최대 10회까지 구매 가능)', price: 100, type: 'training' }
     ];
 
+    // --- 👇👇👇 [1-5 수정] 이 함수 전체를 추가합니다. 👇👇👇 ---
+    function sendDataToRankingServer() {
+      // 닉네임이 없으면 전송하지 않음
+      if (!gameState.username) {
+        console.log('랭킹 서버 전송 스킵: 닉네임이 설정되지 않았습니다.');
+        return;
+      }
+
+      // 1. 도감 완성률 계산 (updateCollection 로직 재사용)
+      const uniqueCaught = Array.from(new Set(gameState.collection.map(m => m.name)));
+      const totalMonsters = Object.values(MONSTERS).reduce((acc, arr) => acc + arr.length, 0);
+      const collectionRate = totalMonsters > 0 ? (uniqueCaught.length / totalMonsters) * 100 : 0;
+
+      // 2. 총 포획 수
+      const totalCaught = gameState.totalCaught || 0;
+
+      // 3. 레어 몬스터 수
+      const rareCaughtCount = gameState.collection.filter(m => m.rarity === 'rare').length;
+      
+      const dataToSend = {
+        username: gameState.username,
+        Collection_Rate: collectionRate,
+        Total_Monsters: totalCaught,
+        Rare_Monsters: rareCaughtCount,
+        timestamp: new Date().toISOString()
+      };
+
+      fetch(RANKING_API_URL, {
+        method: 'POST',
+        contentType: 'application/json',
+        body: JSON.stringify(dataToSend)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log('랭킹이 성공적으로 전송되었습니다.', data.message);
+        } else {
+          console.error('랭킹 전송 실패:', data.error);
+        }
+      })
+      .catch(err => {
+        console.error('랭킹 전송 API 오류:', err);
+      });
+    }
+    // ---------------------------------------------------
+
     // Data Management
     function saveData() {
       // Don't save admin login status - require password every time
       const dataToSave = { ...gameState };
       delete dataToSave.isAdminLoggedIn;
       localStorage.setItem('mathMonsterGame', JSON.stringify(dataToSave));
+      sendDataToRankingServer();
     }
+
+    
 
     function loadData() {
       const saved = localStorage.getItem('mathMonsterGame');
@@ -2704,87 +2879,113 @@
 
     // Collection Functions
     function updateCollection() {
-      const collectionGrid = document.getElementById('collectionGrid');
-      collectionGrid.innerHTML = '';
-      const allMonsters = [];
-      const rarities = ['common', 'rare', 'epic', 'legendary'];
-      
-      rarities.forEach(rarity => {
-        monsters[rarity].forEach(monster => allMonsters.push({ ...monster, rarity }));
-      });
-      
-      allMonsters.forEach(monster => {
-        const isCaught = gameState.collection.some(m => m.name === monster.name && m.rarity === monster.rarity);
-        const isEncountered = gameState.encounteredMonsters.some(m => m.name === monster.name && m.rarity === monster.rarity);
-        const monsterCard = document.createElement('div');
-        monsterCard.className = `monster-card ${monster.rarity}`;
+        const collectionGrid = document.getElementById('collectionGrid');
+        collectionGrid.innerHTML = '';
+
+        const allMonsters = [];
+        const rarities = ['common', 'rare', 'epic', 'legendary'];
         
-        let emojiHtml;
-        if (isCaught) {
-          if (monster.imageUrl) {
-            console.log(`🖼️ 도감에 이미지 표시: ${monster.name}`);
-            emojiHtml = `<img src="${monster.imageUrl}" alt="${monster.name}" style="max-width: 100%; max-height: 80px; object-fit: contain;" onerror="console.error('❌ 도감 이미지 로드 실패: ${monster.name}'); this.parentElement.innerHTML='${monster.emoji}'" onload="console.log('✅ 도감 이미지 로드 성공: ${monster.name}')">`;
-          } else {
-            emojiHtml = monster.emoji;
-          }
-        } else {
-          emojiHtml = '❓';
-        }
+        // 1. 모든 몬스터 리스트(allMonsters)를 먼저 생성합니다.
+        rarities.forEach(rarity => {
+            // 'monsters' 변수는 전역에 정의되어 있다고 가정합니다.
+            monsters[rarity].forEach(monster => allMonsters.push({ ...monster, rarity }));
+        });
         
-        const nameText = (isCaught || isEncountered) ? monster.name : '???';
+        // 2. 통계 변수를 한 번만 정의하고 allMonsters의 길이를 사용합니다.
+        const totalMonsters = allMonsters.length; // 전체 도감 몬스터 수
+        const caughtCount = gameState.collection.length; // 포획한 카드 총 수
+        const encounteredCount = gameState.encounteredMonsters.length; // 만난 고유 몬스터 수
+        const completionRate = Math.round((caughtCount / totalMonsters) * 100);
         
-        // Add click event for caught monsters
-        if (isCaught) {
-          monsterCard.style.cursor = 'pointer';
-          monsterCard.onclick = () => showMonsterDetail(monster);
-        }
+        // (참고: 이전에 collectionHeader.innerHTML을 수정하던 코드는 제거되었습니다.)
         
-        monsterCard.innerHTML = `
-          <div class="monster-emoji">${emojiHtml}</div>
-          <div class="monster-name">${nameText}</div>
-          <div class="monster-rarity rarity-${monster.rarity}">${getRarityText(monster.rarity)}</div>
+        // 3. 새로운 도감 통계 Div (statsDiv)를 생성하고 grid에 추가합니다.
+        const statsDiv = document.createElement('div');
+        statsDiv.style.cssText = 'grid-column: 1 / -1; text-align: center; padding: 20px; background: linear-gradient(135deg, #f7fafc, #edf2f7); border-radius: 12px; margin-top: 20px; border: 2px solid #e2e8f0;';
+        
+        statsDiv.innerHTML = `
+            <h3 style="margin: 0 0 10px 0; color: #2d3748;">📊 도감 통계</h3>
+            <p style="margin: 5px 0; font-weight: bold;">포획: ${caughtCount}/${totalMonsters} (${completionRate}%)</p>
+            <p style="margin: 5px 0; color: #4a5568;">만남: ${encounteredCount + caughtCount}/${totalMonsters}</p>
+            <p style="margin: 5px 0; color: #718096; font-size: 0.9rem;">❓ 미발견 몬스터는 탐색을 통해 만날 수 있습니다</p>
+            <p style="margin: 5px 0; color: #667eea; font-size: 0.9rem;">💡 포획한 수학몬을 클릭하면 자세한 정보를 볼 수 있어요!</p>
         `;
+        collectionGrid.appendChild(statsDiv);
         
-        // 포획한 몬스터만 클릭 가능
-        if (isCaught) {
-          monsterCard.style.cursor = 'pointer';
-          
-          // 클로저 문제 방지를 위한 즉시 실행 함수
-          (function(m) {
-            monsterCard.onclick = function() {
-              console.log('===== 도감 카드 클릭됨 =====');
-              console.log('클릭된 몬스터:', m.name);
-              console.log('몬스터 희귀도:', m.rarity);
-              console.log('원본 imageUrl:', m.imageUrl ? 'O' : 'X');
+        // 4. 몬스터 카드를 그립니다.
+        allMonsters.forEach(monster => {
+            const isCaught = gameState.collection.some(m => m.name === monster.name && m.rarity === monster.rarity);
+            const isEncountered = gameState.encounteredMonsters.some(m => m.name === monster.name && m.rarity === monster.rarity);
+            const monsterCard = document.createElement('div');
+            monsterCard.className = `monster-card ${monster.rarity}`;
+            
+            let emojiHtml;
+            if (isCaught) {
+              if (monster.imageUrl) {
+                console.log(`🖼️ 도감에 이미지 표시: ${monster.name}`);
+                emojiHtml = `<img src="${monster.imageUrl}" alt="${monster.name}" style="max-width: 100%; max-height: 80px; object-fit: contain;" onerror="console.error('❌ 도감 이미지 로드 실패: ${monster.name}'); this.parentElement.innerHTML='${monster.emoji}'" onload="console.log('✅ 도감 이미지 로드 성공: ${monster.name}')">`;
+              } else {
+                emojiHtml = monster.emoji;
+              }
+            } else {
+              emojiHtml = '❓';
+            }
+            
+            const nameText = (isCaught || isEncountered) ? monster.name : '???';
+            
+            // Add click event for caught monsters
+            if (isCaught) {
+              monsterCard.style.cursor = 'pointer';
+              monsterCard.onclick = () => showMonsterDetail(monster);
+            }
+            
+            monsterCard.innerHTML = `
+              <div class="monster-emoji">${emojiHtml}</div>
+              <div class="monster-name">${nameText}</div>
+              <div class="monster-rarity rarity-${monster.rarity}">${getRarityText(monster.rarity)}</div>
+            `;
+            
+            // 포획한 몬스터만 클릭 가능
+            if (isCaught) {
+              monsterCard.style.cursor = 'pointer';
               
-              // gameState.collection에서 실제 몬스터 데이터 찾기 (imageUrl 포함)
-              const caughtMonster = gameState.collection.find(cm => 
-                cm.name === m.name && cm.rarity === m.rarity
-              );
-              
-              console.log('컬렉션에서 찾은 데이터:', caughtMonster);
-              console.log('컬렉션 imageUrl:', caughtMonster && caughtMonster.imageUrl ? 'O' : 'X');
-              
-              // 몬스터 데이터 병합 - imageUrl 우선순위: collection > 원본 m
-              const finalImageUrl = (caughtMonster && caughtMonster.imageUrl) ? caughtMonster.imageUrl : m.imageUrl;
-              
-              const monsterData = {
-                ...m,
-                imageUrl: finalImageUrl,
-                emoji: m.emoji,
-                name: m.name,
-                rarity: m.rarity,
-                description: m.description
-              };
-              
-              console.log('최종 데이터 imageUrl:', monsterData.imageUrl ? 'O (길이: ' + monsterData.imageUrl.length + ')' : 'X');
-              showMonsterDetail(monsterData);
-            };
-          })(monster);
-        }
-        
-        collectionGrid.appendChild(monsterCard);
-      });
+              // 클로저 문제 방지를 위한 즉시 실행 함수
+              (function(m) {
+                monsterCard.onclick = function() {
+                  console.log('===== 도감 카드 클릭됨 =====');
+                  console.log('클릭된 몬스터:', m.name);
+                  console.log('몬스터 희귀도:', m.rarity);
+                  console.log('원본 imageUrl:', m.imageUrl ? 'O' : 'X');
+                  
+                  // gameState.collection에서 실제 몬스터 데이터 찾기 (imageUrl 포함)
+                  const caughtMonster = gameState.collection.find(cm => 
+                    cm.name === m.name && cm.rarity === m.rarity
+                  );
+                  
+                  console.log('컬렉션에서 찾은 데이터:', caughtMonster);
+                  console.log('컬렉션 imageUrl:', caughtMonster && caughtMonster.imageUrl ? 'O' : 'X');
+                  
+                  // 몬스터 데이터 병합 - imageUrl 우선순위: collection > 원본 m
+                  const finalImageUrl = (caughtMonster && caughtMonster.imageUrl) ? caughtMonster.imageUrl : m.imageUrl;
+                  
+                  const monsterData = {
+                    ...m,
+                    imageUrl: finalImageUrl,
+                    emoji: m.emoji,
+                    name: m.name,
+                    rarity: m.rarity,
+                    description: m.description
+                  };
+                  
+                  console.log('최종 데이터 imageUrl:', monsterData.imageUrl ? 'O (길이: ' + monsterData.imageUrl.length + ')' : 'X');
+                  showMonsterDetail(monsterData);
+                };
+              })(monster);
+            }
+            
+            collectionGrid.appendChild(monsterCard);
+        });
+    }
       
       const statsDiv = document.createElement('div');
       statsDiv.style.cssText = 'grid-column: 1 / -1; text-align: center; padding: 20px; background: linear-gradient(135deg, #f7fafc, #edf2f7); border-radius: 12px; margin-top: 20px; border: 2px solid #e2e8f0;';
@@ -2800,7 +3001,7 @@
         <p style="margin: 5px 0; color: #667eea; font-size: 0.9rem;">💡 포획한 수학몬을 클릭하면 자세한 정보를 볼 수 있어요!</p>
       `;
       collectionGrid.appendChild(statsDiv);
-    }
+    
 
     function showMonsterDetail(monster) {
       console.log('📖 몬스터 상세 정보 표시:', monster.name);
